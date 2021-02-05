@@ -10,7 +10,7 @@
     ],
     "require": {
         "mi-squared/mi-framework": "^0.1.0",
-        "mi-squared/oe-module-installer-plugin": "^0.1.0"
+        "mi-squared/oe-module-installer-plugin": "dev-master"
     },
     "autoload": {
         "psr-4": {"Mi2\\Import\\": "src/"}

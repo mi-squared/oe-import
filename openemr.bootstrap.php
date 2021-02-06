@@ -20,10 +20,10 @@ function oe_module_custom_add_menu_item(MenuEvent $event)
 
     $menuItem = new stdClass();
     $menuItem->requirement = 0;
-    $menuItem->target = 'adm';
-    $menuItem->menu_id = 'adm0';
-    $menuItem->label = xlt("Custom Menu Item");
-    $menuItem->url = "/interface/modules/custom_modules/oe-custom-module-tpl/index.php";
+    $menuItem->target = 'import';
+    $menuItem->menu_id = 'import0';
+    $menuItem->label = xlt("Import");
+    $menuItem->url = "/interface/modules/custom_modules/oe-import/index.php?action=import!import";
     $menuItem->children = [];
     $menuItem->acl_req = ["admin", "super"];
 

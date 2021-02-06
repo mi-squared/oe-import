@@ -1,4 +1,4 @@
 <?php
 return [
-  'APP_NAMESPACE' => 'Mi2\CustomModuleTpl',
+  'APP_NAMESPACE' => 'Mi2\Import',
 ];

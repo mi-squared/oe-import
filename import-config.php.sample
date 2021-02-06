@@ -1,0 +1,4 @@
+<?php
+return [
+  'IMPORTER' => \Mi2\CompanyImporter::class,
+];

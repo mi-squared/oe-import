@@ -64,7 +64,7 @@ class Batch extends AbstractModel
         // These field names are used in the report (see getColumns())
         $sql = "
             SELECT B.id, B.status, B.start_datetime, B.end_datetime, B.created_datetime, B.filename, B.user_filename, B.record_count,
-                   (B.num_modified + B.num_inserted) AS num_total, B.num_modified, B.num_inserted
+                   (B.num_modified + B.num_inserted) AS num_total, B.num_modified, B.num_inserted, B.messages
             FROM $batch_table B";
 
         error_log($sql);
@@ -81,11 +81,6 @@ class Batch extends AbstractModel
             'Created Time' => 'created_datetime',
             'Start Time' => 'start_datetime',
             'End Time' => 'end_datetime',
-            'Record Count' => 'record_count',
-            '# Total Processed' => 'num_total',
-            '# Inserted' => 'num_inserted',
-            '# Modified' => 'num_modified',
-            '# Errors' => 'errors',
             'Messages' => 'messages'
         ];
     }

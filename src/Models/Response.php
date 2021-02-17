@@ -5,8 +5,42 @@ namespace Mi2\Import\Models;
 
 class Response extends AbstractModel
 {
-    const UPDATE = 'update';
-    const INSERT = 'insert';
+    const SUCCESS = 'success';
+    const FAILURE = 'failure';
 
-    protected $actionPerformed;
+    protected $messages = [];
+    protected $result;
+
+
+    /**
+     * @return mixed
+     */
+    public function getMessages()
+    {
+        return $this->messages;
+    }
+
+    /**
+     * @param mixed $message
+     */
+    public function setMessages($messages)
+    {
+        $this->messages = $messages;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getResult()
+    {
+        return $this->result;
+    }
+
+    /**
+     * @param mixed $result
+     */
+    public function setResult($result)
+    {
+        $this->result = $result;
+    }
 }

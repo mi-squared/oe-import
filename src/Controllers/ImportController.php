@@ -11,7 +11,7 @@ namespace Mi2\Import\Controllers;
 use Mi2\DataTable_1_9\SearchFilter as SearchFilter;
 use Mi2\Framework\AbstractController;
 use Mi2\Framework\Response;
-use Mi2\Import\ImportService;
+use Mi2\Import\ImportManager;
 use Mi2\Import\Models\Batch;
 
 class ImportController extends AbstractController
@@ -20,7 +20,7 @@ class ImportController extends AbstractController
 
     public function __construct()
     {
-        $this->importService = new ImportService();
+        $this->importService = new ImportManager();
     }
 
     /**
@@ -32,22 +32,35 @@ class ImportController extends AbstractController
      */
     public function _action_import()
     {
-        // Fetch all the batches for display (so we can see status of their processing)
-        // and push them onto the view so our view has access to them for our report.
-        $batches_result = Batch::all();
-        $batches_array = [];
-        while ($batch = sqlFetchArray($batches_result)) {
-            $batches_array[]= $batch;
-        }
-
         // Get the column mapping
         $this->view->columns = Batch::getColumns();
 
         // Specify which view script to display
-        $this->view->batches = $batches_array;
-        $this->view->importService = $this->importService; // If there are any validation messages, they'll be in here
+        $this->view->importManager = $this->importManager; // If there are any validation messages, they'll be in here
         $this->view->action_url = $this->getBaseUrl() . '/index.php?action=import!do_import';
+        $this->view->ajax_source_url = $this->getBaseUrl() . '/index.php?action=import!ajax_source';
         $this->setViewScript('import/import.php');
+    }
+
+    public function _action_ajax_source()
+    {
+        $batches_result = Batch::all();
+        $response = new \stdClass();
+        $response->data = [];
+        while ($batch = sqlFetchArray($batches_result)) {
+            $element = new \stdClass();
+            $element->id = $batch['id'];
+            $element->status = $batch['status'];
+            $element->user_filename = $batch['user_filename'];
+            $element->created_datetime = $batch['created_datetime'];
+            $element->start_datetime = $batch['start_datetime'];
+            $element->end_datetime = $batch['end_datetime'];
+            $element->messages = json_decode($batch['messages']);
+            $response->data[] = $element;
+        }
+
+        echo json_encode($response);
+        exit();
     }
 
     /**
@@ -64,24 +77,25 @@ class ImportController extends AbstractController
     {
         if (isset($_POST['do_import'])) {
             // Insert the background service entry in case it doesn't exist.
-            ImportService::insertBackgroundService();
+            ImportManager::insertBackgroundService();
 
-            // See if we have an uplaod file
-            $file = $_FILES['input_file'];
+            $files = ImportManager::reArrayFiles($_FILES['input_files']);
 
-            // Set the file we're using to create the batch
-            // $file contains an assos array with all the file's data
-            $this->importService->setUploadFile($file);
+            foreach ($files as $file) {
+                // Set the file we're using to create the batch
+                // $file contains an assos array with all the file's data
+                $this->importService->setUploadFile($file);
 
-            // Do basic validation on file
-            // Store messages and display them on the UI
-            $valid = $this->importService->validateFile();
+                // Do basic validation on file
+                // Store messages and display them on the UI
+                $valid = $this->importService->validateFile();
 
-            // If the file is valid, store the tmp file in a real document directory.
-            // Create the batch, set to "waiting" so the background process
-            // can pick it up and process it.
-            if (true === $valid) {
-                $this->importService->createBatch();
+                // If the file is valid, store the tmp file in a real document directory.
+                // Create the batch, set to "waiting" so the background process
+                // can pick it up and process it.
+                if (true === $valid) {
+                    $this->importService->createBatch();
+                }
             }
         }
 

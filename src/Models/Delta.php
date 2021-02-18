@@ -23,4 +23,11 @@ class Delta extends AbstractModel
      */
     const TYPE_MOD = 'modification';
     const TYPE_INS = 'insert';
+
+    public static function deleteByBatchID($id)
+    {
+        $table = self::$table;
+        $sql = "DELETE FROM $table WHERE batch_id = ?";
+        return sqlStatement($sql, [$id]);
+    }
 }

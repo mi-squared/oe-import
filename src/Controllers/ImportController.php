@@ -16,11 +16,13 @@ use Mi2\Import\Models\Batch;
 
 class ImportController extends AbstractController
 {
-    protected $importService;
+    protected $importManager;
 
     public function __construct()
     {
-        $this->importService = new ImportManager();
+        // Get the import manager from the IOC container (set in openemr.bootstrap.php)
+        $container = $GLOBALS["kernel"]->getContainer();
+        $this->importManager = $container->get('import-manager');
     }
 
     /**
@@ -84,22 +86,39 @@ class ImportController extends AbstractController
             foreach ($files as $file) {
                 // Set the file we're using to create the batch
                 // $file contains an assos array with all the file's data
-                $this->importService->setUploadFile($file);
+                $this->importManager->setUploadFile($file);
 
                 // Do basic validation on file
                 // Store messages and display them on the UI
-                $valid = $this->importService->validateFile();
+                $valid = $this->importManager->validateFile();
 
                 // If the file is valid, store the tmp file in a real document directory.
                 // Create the batch, set to "waiting" so the background process
                 // can pick it up and process it.
                 if (true === $valid) {
-                    $this->importService->createBatch();
+                    $this->importManager->createBatch();
                 }
             }
         }
 
         // Now just do all the things the mss function does for rendering the index page
         $this->_action_import();
+    }
+
+    public function _action_do_row_action()
+    {
+        $what = $this->request->getParam('what');
+        $id = $this->request->getParam('id');
+        if ($what == 'delete') {
+            Batch::delete($id);
+        } else if ($what == 'rerun') {
+            // Put batch back in waiting status
+            Batch::update($id, [
+                'status' => Batch::STATUS_WAIT
+            ]);
+        }
+        $response = new Response(200, "Success");
+        echo $response->toJson();
+        exit;
     }
 }

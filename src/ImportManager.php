@@ -2,13 +2,24 @@
 
 namespace Mi2\Import;
 
+use Mi2\Import\Interfaces\ImporterServiceInterface;
 use Mi2\Import\Models\Batch;
+use Mi2\Import\Models\Logger;
 use Mi2\Import\Models\Response;
+use Mi2\Import\Traits\InteractsWithLogger;
 
 class ImportManager
 {
+    use InteractsWithLogger;
+
+    /**
+     * Registered import services
+     *
+     * @var array
+     */
+    protected $services = [];
+
     protected $file;
-    protected $validationMessages = [];
 
     // These are for while running batches of import
     protected $current_batch_id;
@@ -16,12 +27,14 @@ class ImportManager
     protected $num_inserted;
     protected $num_modified;
 
-    protected $current_record_had_correct_pid;
-    protected $config;
-
     public function __construct()
     {
-        $this->config = include __DIR__ . "/../import-config.php";
+        $this->logger = new Logger();
+    }
+
+    public function register(ImporterServiceInterface $service)
+    {
+        $this->services[] = $service;
     }
 
     /**
@@ -29,72 +42,72 @@ class ImportManager
      *
      * @param $file
      */
-    public static function makeImporter($filename)
+    public function makeImporter($filename)
     {
-        $importer = null;
+        $importer = new NullImporter();
         $path_parts = pathinfo($filename);
-        if (strtolower($path_parts['extension']) == 'csv') {
-            $importer = new AliveAndWellImport();
-        } else if (strtolower($path_parts['extension']) == 'png' ||
-            strtolower($path_parts['extension']) == 'jpg' ||
-            strtolower($path_parts['extension']) == 'jpeg') {
-            $importer = new AliveAndWellAttachPhoto();
-        } else {
-            $importer = new AliveAndWellNullImporter();
+        $extension = strtolower($path_parts['extension']);
+
+        // Search for the appropriate importer for this file
+        foreach($this->services as $service) {
+            if ($service->supports($extension)) {
+                $importer = $service;
+                break;
+            }
         }
+
         return $importer;
     }
 
     public function execute()
     {
         // First, find all the batches that are in 'waiting' state
-
-
         $waiting_batches = Batch::fetchByStatus(Batch::STATUS_WAIT);
 
-        while ($batch = sqlFetchArray($waiting_batches)) {
+        while ($row = sqlFetchArray($waiting_batches)) {
+            $batch = new Batch($row);
+            $this->current_batch_id = $batch->getId();
 
-            $this->current_batch_id = $batch['id'];
-
-            Batch::update($batch['id'], [
+            Batch::update($batch->getId(), [
                 'status' => Batch::STATUS_PROCESSING,
                 'start_datetime' => date('Y-m-d H:i:s')
             ]);
 
-            // Reset validation messages for each batch
-            $this->validationMessages = [];
-
             // if the file is an image, run the image importer, if it's a csv run patient importer
-            $importer = self::makeImporter($batch['filename']);
+            $importer = $this->makeImporter($batch->getFilename());
 
-            $importer->setup($batch);
+            // Reset messages, create a new logger for each batch
+            $this->logger = new Logger();
+            $importer->setLogger($this->logger);
 
-            if ($importer->validate() === true) {
+            $setup_success = $importer->setup($batch);
+
+            if (
+                $setup_success === true &&
+                $importer->validate() === true
+            ) {
                 // Pass the pointer to the open file to the importer
                 $response = $importer->import();
             } else {
                 // This is the case where the validator fails, get messages and update batch and quit
-                $this->validationMessages = array_merge($importer->getValidationMessages(), $this->validationMessages);
-                Batch::update($batch['id'], [
+                Batch::update($batch->getId(), [
                     'status' => Batch::STATUS_ERROR,
-                    'messages' => json_encode($this->validationMessages),
+                    'messages' => json_encode($this->logger->getMessages()),
                     'end_datetime' => date('Y-m-d H:i:s')
                 ]);
                 continue;
             }
 
             if ($response->getResult() === Response::SUCCESS) {
-                $this->validationMessages = array_merge($response->getMessages(), $this->validationMessages);
-                Batch::update($batch['id'], [
+                Batch::update($batch->getId(), [
                     'status' => Batch::STATUS_COMPLETE,
-                    'messages' => json_encode($this->validationMessages),
+                    'messages' => json_encode($this->logger->getMessages()),
                     'end_datetime' => date('Y-m-d H:i:s')
                 ]);
             } else {
-                $this->validationMessages = array_merge($response->getMessages(), $this->validationMessages);
-                Batch::update($batch['id'], [
+                Batch::update($batch->getId(), [
                     'status' => Batch::STATUS_ERROR,
-                    'messages' => json_encode($this->validationMessages),
+                    'messages' => json_encode($this->logger->getMessages()),
                     'end_datetime' => date('Y-m-d H:i:s')
                 ]);
             }
@@ -122,32 +135,34 @@ class ImportManager
     public function validateFile()
     {
         if (!empty($this->file)) {
-            $importer = self::makeImporter($this->file['name']);
+            $importer = $this->makeImporter($this->file['name']);
             if ($importer->validateUploadFile($this->file)) {
                 return true;
             } else {
-                $this->validationMessages = array_merge($importer->getValidationMessages(), $this->validationMessages);
+                $this->logger->addMessage("Importer validation failed, and the importer does not implement validation messages");
                 return false;
             }
         } else {
-            $this->validationMessages[] = "No file uploaded";
+            $this->logger->addMessage("No file uploaded");
         }
         return false;
     }
 
     public static function reArrayFiles(&$file_post)
     {
-        $isMulti    = is_array($file_post['name']);
-        $file_count    = $isMulti?count($file_post['name']):1;
-        $file_keys    = array_keys($file_post);
-
-        $file_ary    = [];    //Итоговый массив
-        for($i=0; $i<$file_count; $i++)
-            foreach($file_keys as $key)
-                if($isMulti)
+        $isMulti = is_array($file_post['name']);
+        $file_count = $isMulti?count($file_post['name']):1;
+        $file_keys = array_keys($file_post);
+        $file_ary = [];
+        for ($i=0; $i<$file_count; $i++) {
+            foreach ($file_keys as $key) {
+                if ($isMulti) {
                     $file_ary[$i][$key] = $file_post[$key][$i];
-                else
-                    $file_ary[$i][$key]    = $file_post[$key];
+                } else {
+                    $file_ary[$i][$key] = $file_post[$key];
+                }
+            }
+        }
 
         return $file_ary;
     }
@@ -164,7 +179,7 @@ class ImportManager
         $directory = $GLOBALS['OE_SITE_DIR'] . DIRECTORY_SEPARATOR . 'documents' . DIRECTORY_SEPARATOR . 'imports';
         if (!file_exists($directory)) {
             if (!mkdir($directory, 0700, true)) {
-                $this->validationMessages[]= xl('Unable to create document directory');
+                $this->logger->addMessage(xl('Unable to create document directory'));
                 return false;
             }
         }
@@ -173,7 +188,7 @@ class ImportManager
         $parts = pathinfo($this->file['name']);
         $filepath = $directory . DIRECTORY_SEPARATOR . date("Ymdhi") . "." . $parts['extension'];
         if (false === move_uploaded_file($this->file['tmp_name'], $filepath)) {
-            $this->validationMessages[]= xl('Unable to move uploaded file');
+            $this->logger->addMessage(xl('Unable to move uploaded file'));
             return false;
         }
 
@@ -183,14 +198,6 @@ class ImportManager
             'created_datetime' => date('Y-m-d h:i:s'),
             'status' => Batch::STATUS_WAIT
         ]);
-    }
-
-    /**
-     * @return array
-     */
-    public function getValidationMessages()
-    {
-        return $this->validationMessages;
     }
 
     /*
@@ -212,7 +219,6 @@ class ImportManager
     }
 
     public static function change_key( $array, $old_key, $new_key ) {
-
 
         if( ! array_key_exists( $old_key, $array ) )
             return $array;

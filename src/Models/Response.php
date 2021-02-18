@@ -5,12 +5,12 @@ namespace Mi2\Import\Models;
 
 class Response extends AbstractModel
 {
-    const SUCCESS = 'success';
-    const FAILURE = 'failure';
+    const SUCCESS = true;
+    const FAILURE = false;
 
+    protected $data = '';
     protected $messages = [];
-    protected $result;
-
+    protected $result = true;
 
     /**
      * @return mixed

@@ -4,9 +4,22 @@ namespace Mi2\Import\Models;
 
 use OpenEMR\Events\BoundFilter;
 
-class AbstractModel extends \Mi2\Framework\AbstractModel
+abstract class AbstractModel extends \Mi2\Framework\AbstractModel
 {
     public static $table = null;
+
+    /**
+     * Given a record set, get the next row, converted to
+     * a model
+
+     * @param $record_set
+     */
+    public static function getNext($record_set, $class)
+    {
+        $row = sqlFetchArray($record_set);
+        $model = new $class($row);
+        return $model;
+    }
 
     public function getData() {
         $data = $this->toArray();
@@ -25,19 +38,19 @@ class AbstractModel extends \Mi2\Framework\AbstractModel
         return $result;
     }
 
-    public static function find( $id )
+    public static function find($id)
     {
         $table = static::$table;
         $statement = "SELECT *
                 FROM $table
                 WHERE id = ?";
-        $result = sqlStatement( $statement, array( $id ) );
-        $referral = false;
+        $result = sqlStatement( $statement, [$id] );
+        $entity = false;
         if ( $result ) {
-            $referral = sqlFetchArray( $result );
+            $entity = sqlFetchArray( $result );
         }
 
-        return $referral;
+        return $entity;
     }
 
     /**
@@ -107,5 +120,12 @@ class AbstractModel extends \Mi2\Framework\AbstractModel
         $insert_fields[] = $id;
 
         return sqlStatement($sql, $insert_fields);
+    }
+
+    public static function delete($id)
+    {
+        $table = static::$table;
+        $sql = "DELETE FROM $table WHERE id = ?";
+        $result = sqlStatement($sql, [$id]);
     }
 }

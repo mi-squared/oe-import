@@ -5,16 +5,9 @@ use OpenEMR\Core\Header;
 ?>
 <html>
 <head>
+    <?php Header::setupHeader(['datatables', 'datatables-colreorder', 'datatables-dt', 'datatables-bs']); ?>
+
     <title><?php echo xlt('Import'); ?></title>
-
-    <link rel="stylesheet" href="<?php echo $GLOBALS['assets_static_relative']; ?>/bootstrap-3-3-4/dist/css/bootstrap.css" type="text/css">
-
-    <link rel="stylesheet" href="<?php echo $GLOBALS['assets_static_relative']; ?>/datatables.net-dt-1-10-13/css/jquery.dataTables.min.css" type="text/css">
-    <link rel="stylesheet" href="<?php echo $GLOBALS['assets_static_relative']; ?>/datatables.net-colreorder-dt-1-3-2/css/colReorder.dataTables.min.css" type="text/css">
-
-    <script type="text/javascript" src="<?php echo $GLOBALS['assets_static_relative']; ?>/jquery-min-1-10-2/index.js"></script>
-    <script type="text/javascript" src="<?php echo $GLOBALS['assets_static_relative']; ?>/datatables.net-1-10-13/js/jquery.dataTables.min.js"></script>
-    <script type="text/javascript" src="<?php echo $GLOBALS['assets_static_relative']; ?>/datatables.net-colreorder-1-3-2/js/dataTables.colReorder.min.js"></script>
 
     <script type="text/javascript" src="../oe-import/assets/js/datatables/Buttons-1.6.5/js/dataTables.buttons.js"></script>
     <script type="text/javascript" src="../oe-import/assets/js/datatables/Buttons-1.6.5/js/buttons.dataTables.js"></script>
@@ -25,13 +18,8 @@ use OpenEMR\Core\Header;
 
     <link rel="stylesheet" href="../oe-import/assets/js/datatables/Buttons-1.6.5/css/buttons.bootstrap4.css" type="text/css" />
     <style type="text/css">
-        .dataTables_wrapper .dataTables_scroll div.dataTables_scrollBody th, .dataTables_wrapper .dataTables_scroll div.dataTables_scrollBody td
-        {
+        .dataTables_wrapper .dataTables_scroll div.dataTables_scrollBody > table > thead > tr > th, .dataTables_wrapper .dataTables_scroll div.dataTables_scrollBody > table > thead > tr > td, .dataTables_wrapper .dataTables_scroll div.dataTables_scrollBody > table > tbody > tr > th, .dataTables_wrapper .dataTables_scroll div.dataTables_scrollBody > table > tbody > tr > td {
             vertical-align: top;
-        }
-
-        .badge {
-            padding: 5px 7px 6px 7px;
         }
 
         .badge.complete {
@@ -49,10 +37,10 @@ use OpenEMR\Core\Header;
 </head>
 <body class="body_top" style="padding: 10px;">
 
-<?php if (count($this->importManager->getValidationMessages()) > 0) { ?>
+<?php if (count($this->importManager->getLogger()->getMessages()) > 0) { ?>
     <div class="alert-danger">
         <ul>
-            <?php foreach($this->importManager->getValidationMessages() as $message) { ?>
+            <?php foreach($this->importManager->getLogger()->getMessages() as $message) { ?>
                 <li><?php echo $message; ?></li>
             <?php } ?>
         </ul>
@@ -66,14 +54,15 @@ use OpenEMR\Core\Header;
         <label for="input_files">Input Files</label>
         <input type="file" class="form-control-file" id="input_files" name="input_files[]" multiple>
     </div>
-    <input type="submit" class="btn css_button_small" value="Do Import" \>
+    <input type="submit" class="btn btn-primary css_button_small" value="Do Import" \>
 </form>
 
 <hr>
 
 <div id="report_results">
-    <table class='table table-striped table-bordered' style="width: 100%" id='mymaintable'>
+    <table class='table table-striped table-bordered' style="width: 100%" id='import-table'>
         <thead class='thead-light'>
+        <th>&nbsp;</th>
         <?php foreach ($this->columns as $title => $key) { ?>
             <th><?php echo xlt($title); ?></th>
         <?php } ?>
@@ -84,7 +73,8 @@ use OpenEMR\Core\Header;
 </div>
 </body>
 <script type="text/javascript">
-    $("#mymaintable").DataTable({
+
+    var batch_table = $("#import-table").DataTable({
         "scrollX": true,
         dom: 'frtip',
         "processing": true,
@@ -97,6 +87,17 @@ use OpenEMR\Core\Header;
             }
         },
         "columns": [
+            {
+                data: null,
+                render: function (data, type, row, meta) {
+                    const id = data.id;
+                    const button_group = '<div class="btn-group">' +
+                        '<a href="#" data-id="' + id + '" class="btn btn-sm batch-rerun"><i class="fa fa-recycle"></i></a>' +
+                        '<a href="#" data-id="' + id + '"class="btn btn-sm batch-delete"><i class="fa fa-trash"></i></a>' +
+                        '</div>';
+                    return button_group;
+                }
+            },
             { "data": "id" },
             {
                 "data": "status",
@@ -143,7 +144,49 @@ use OpenEMR\Core\Header;
                 }
             }
         ],
-        "order": [[0, 'desc']]
+        "order": [[1, 'desc']]
+    });
+
+    setInterval(function() {
+        batch_table.ajax.reload( null, false );
+    }, 3000);
+
+    $("#import-table tbody").on('click', 'a.batch-delete', function(e) {
+        e.preventDefault();
+        const id = $(this).attr('data-id');
+        var that = $(this);
+        const data = {
+          id: id,
+          what: 'delete'
+        };
+        $.ajax({
+            type: 'POST',
+            dataType: "json",
+            url: '<?php echo $this->baseUrl() ?>/index.php?action=import!do_row_action',
+            data: data,
+            success: function (data) {
+                const row = batch_table.row(that.parents('tr'));
+                row.remove().draw();
+            }
+        });
+    });
+
+    $("#import-table tbody").on('click', 'a.batch-rerun', function(e) {
+        e.preventDefault();
+        const id = $(this).attr('data-id');
+        const data = {
+            id: id,
+            what: 'rerun'
+        };
+        $.ajax({
+            type: 'POST',
+            dataType: "json",
+            url: '<?php echo $this->baseUrl() ?>/index.php?action=import!do_row_action',
+            data: data,
+            success: function (data) {
+                batch_table.ajax.reload( null, false );
+            }
+        });
     });
 </script>
 </html>

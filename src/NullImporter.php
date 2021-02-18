@@ -4,30 +4,35 @@
 namespace Mi2\Import;
 
 
-class NullImporter implements ImportsInterface
-{
-    protected $validationMessages = [];
+use Mi2\Import\Interfaces\ImporterServiceInterface;
+use Mi2\Import\Models\Batch;
+use Mi2\Import\Models\Logger;
+use Mi2\Import\Traits\InteractsWithLogger;
 
-    public function setup($batch)
+class NullImporter implements ImporterServiceInterface
+{
+    use InteractsWithLogger;
+
+    public function supports($extension)
+    {
+        return false;
+    }
+
+    public function setup(Batch $batch)
     {
         // TODO: Implement setup() method.
     }
 
     public function validateUploadFile($file)
     {
-        $this->validationMessages[] = "Could not initialize and importer, check that file is one of the supported types (csv, jpg, jpeg, png)";
+        $this->getLogger()->addMessage("Could not initialize and importer, check that file is one of the supported types (csv, jpg, jpeg, png)");
         return false;
     }
 
     public function validate()
     {
-        $this->validationMessages[] = "Could not initialize and importer, check that file is one of the supported types (csv, jpg, jpeg, png)";
+        $this->getLogger()->addMessage("Could not initialize and importer, check that file is one of the supported types (csv, jpg, jpeg, png)");
         return false;
-    }
-
-    public function getValidationMessages()
-    {
-        return $this->validationMessages;
     }
 
     public function import()

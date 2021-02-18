@@ -1,5 +1,7 @@
 <?php
 
+use Mi2\Import\ImportManager;
+
 set_time_limit(0);
 
 $ignoreAuth = true;
@@ -17,7 +19,7 @@ require_once __DIR__.'/../../../globals.php';
 function start_import()
 {
     // Execute processing of the file
-    $mss = new \Mi2\Import\ImportService();
-    $mss->execute();
+    $importManager = $GLOBALS["kernel"]->getContainer()->get('import-manager');
+    $importManager->execute();
 }
 

@@ -14,6 +14,80 @@ class Batch extends AbstractModel
 {
     public static $table = 'aa_import_batch';
 
+    protected $id;
+    protected $status;
+    protected $user_filename;
+    protected $filename;
+    protected $created_datetime;
+    protected $start_datetime;
+    protected $end_datetime;
+    protected $messages = [];
+
+    /**
+     * @return mixed
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getStatus()
+    {
+        return $this->status;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getUserFilename()
+    {
+        return $this->user_filename;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getFilename()
+    {
+        return $this->filename;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCreatedDatetime()
+    {
+        return $this->created_datetime;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getStartDatetime()
+    {
+        return $this->start_datetime;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getEndDatetime()
+    {
+        return $this->end_datetime;
+    }
+
+    /**
+     * @return array
+     */
+    public function getMessages(): array
+    {
+        return $this->messages;
+    }
+
+
     /**
      * These are status codes for the batch table's status
      * field.
@@ -40,9 +114,18 @@ class Batch extends AbstractModel
     {
         $batch_table = self::$table;
         $delta_table = Delta::$table;
-        $sql = "SELECT * FROM $batch_table B WHERE id = ? JOIN $delta_table D ON B.id = D.batch_id";
-        $result = sqlStatement($sql, [$id]);
+        $sql = "SELECT * FROM $batch_table B WHERE B.id = ? LIMIT 1";
+        $result = sqlQuery($sql, [$id]);
         return $result;
+    }
+
+    public static function delete($id)
+    {
+        // Delete the file on disk, then delete the record
+        $batch = self::find($id);
+        unlink($batch['filename']);
+        Delta::deleteByBatchID($id);
+        parent::delete($id);
     }
 
     public static function fetchByStatus($status = self::STATUS_WAIT)
@@ -67,7 +150,7 @@ class Batch extends AbstractModel
                    (B.num_modified + B.num_inserted) AS num_total, B.num_modified, B.num_inserted, B.messages
             FROM $batch_table B";
 
-        error_log($sql);
+        // error_log($sql);
 
         return sqlStatement($sql);
     }

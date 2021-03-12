@@ -8,11 +8,11 @@
 
 namespace Mi2\Import\Controllers;
 
-use Mi2\DataTable_1_9\SearchFilter as SearchFilter;
 use Mi2\Framework\AbstractController;
 use Mi2\Framework\Response;
 use Mi2\Import\ImportManager;
 use Mi2\Import\Models\Batch;
+use OpenEMR\Common\Csrf\CsrfUtils;
 
 class ImportController extends AbstractController
 {
@@ -46,6 +46,11 @@ class ImportController extends AbstractController
 
     public function _action_ajax_source()
     {
+        // not calling from cron job so ensure passes csrf check
+        if (!CsrfUtils::verifyCsrfToken($_GET["csrf_token_form"])) {
+            CsrfUtils::csrfNotVerified();
+        }
+
         $batches_result = Batch::all();
         $response = new \stdClass();
         $response->data = [];

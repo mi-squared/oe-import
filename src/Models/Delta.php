@@ -12,7 +12,9 @@
 
 namespace Mi2\Import\Models;
 
-class Delta extends AbstractModel
+use Mi2\Framework\AbstractEntity;
+
+class Delta extends AbstractEntity
 {
     public static $table = 'aa_import_batch_delta';
 

@@ -1,6 +1,7 @@
 <?php
 
 use OpenEMR\Core\Header;
+use OpenEMR\Common\Csrf\CsrfUtils;
 
 ?>
 <html>
@@ -48,7 +49,7 @@ use OpenEMR\Core\Header;
 <?php } ?>
 
 <form class="form-inline" enctype="multipart/form-data" method='post' name='do_import_form' id='do_import_form' action='<?php echo $this->action_url; ?>' onsubmit='return top.restoreSession()'>
-<!--    <input type="hidden" name="csrf_token_form" value="--><?php //echo attr(CsrfUtils::collectCsrfToken()); ?><!--" />-->
+    <input type="hidden" id="csrf_token_form" name="csrf_token_form" value="<?php echo attr(CsrfUtils::collectCsrfToken()); ?>" />
     <input type="hidden" name="do_import" value="1" />
     <div class="form-group mb-2">
         <label for="input_files">Input Files</label>
@@ -81,8 +82,11 @@ use OpenEMR\Core\Header;
         // next 2 lines invoke server side processing
         "ajax": {
             "type" : "GET",
-            "url" : '<?php echo $this->ajax_source_url; ?>',
+            "url" : '<?php echo $this->ajax_source_url; ?>&csrf_token_form=' + $('#csrf_token_form').val(),
             "dataSrc": function (json) {
+                if (typeof json.data === 'undefined') {
+                    window.location = '<?php $GLOBALS['webroot']; ?>';
+                }
                 return json.data;
             }
         },

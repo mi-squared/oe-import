@@ -56,6 +56,10 @@ class ImportManager
             }
         }
 
+        // Reset messages, create a new logger for each batch
+        $this->logger = new Logger();
+        $importer->setLogger($this->logger);
+
         return $importer;
     }
 
@@ -75,10 +79,6 @@ class ImportManager
 
             // if the file is an image, run the image importer, if it's a csv run patient importer
             $importer = $this->makeImporter($batch->getFilename());
-
-            // Reset messages, create a new logger for each batch
-            $this->logger = new Logger();
-            $importer->setLogger($this->logger);
 
             $setup_success = $importer->setup($batch);
 

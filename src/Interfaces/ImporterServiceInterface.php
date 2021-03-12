@@ -17,7 +17,7 @@ interface ImporterServiceInterface
      */
     public function supports($extension);
 
-    public function setup(Batch $batch);
+    public function setup(Batch $batch):bool;
 
     public function validate();
 

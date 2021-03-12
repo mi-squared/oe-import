@@ -9,7 +9,7 @@
         }
     ],
     "require": {
-        "mi-squared/mi-framework": "^0.1.0",
+        "mi-squared/mi-framework": "dev-master",
         "mi-squared/oe-module-installer-plugin": "dev-master"
     },
     "autoload": {

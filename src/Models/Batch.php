@@ -8,9 +8,10 @@
 
 namespace Mi2\Import\Models;
 
+use Mi2\Framework\AbstractEntity;
 use OpenEMR\Events\BoundFilter;
 
-class Batch extends AbstractModel
+class Batch extends AbstractEntity
 {
     public static $table = 'aa_import_batch';
 

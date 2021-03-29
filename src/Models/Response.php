@@ -3,6 +3,8 @@
 
 namespace Mi2\Import\Models;
 
+use Mi2\Framework\AbstractModel;
+
 class Response extends AbstractModel
 {
     const SUCCESS = true;

@@ -56,6 +56,10 @@ class ImportManager
             }
         }
 
+        // Reset messages, create a new logger for each batch
+        $this->logger = new Logger();
+        $importer->setLogger($this->logger);
+
         return $importer;
     }
 
@@ -75,10 +79,6 @@ class ImportManager
 
             // if the file is an image, run the image importer, if it's a csv run patient importer
             $importer = $this->makeImporter($batch->getFilename());
-
-            // Reset messages, create a new logger for each batch
-            $this->logger = new Logger();
-            $importer->setLogger($this->logger);
 
             $setup_success = $importer->setup($batch);
 
@@ -196,6 +196,38 @@ class ImportManager
         return Batch::create([
             'filename' => $filepath, // The name of the file on disk
             'user_filename' => $this->file['name'], // The name of the file that was uploaded
+            'created_datetime' => date('Y-m-d h:i:s'),
+            'status' => Batch::STATUS_WAIT
+        ]);
+    }
+
+    /**
+     * Given an absolute path to a file, create a batch in the waiting state from it.
+     *
+     * @param $file
+     */
+    public function createBatchFromFile($file)
+    {
+        // Move the tmp file to documents dir
+        $directory = $GLOBALS['OE_SITE_DIR'] . DIRECTORY_SEPARATOR . 'documents' . DIRECTORY_SEPARATOR . 'imports';
+        if (!file_exists($directory)) {
+            if (!mkdir($directory, 0700, true)) {
+                $this->logger->addMessage(xl('Unable to create document directory'));
+                return false;
+            }
+        }
+
+        // Create the file with the current date timestamp
+        $parts = pathinfo($file);
+        $filepath = $directory . DIRECTORY_SEPARATOR . date("Ymdhi") . "." . $parts['extension'];
+        if (false === rename($file, $filepath)) {
+            $this->logger->addMessage(xl('Unable to move (rename) file'));
+            return false;
+        }
+
+        return Batch::create([
+            'filename' => $filepath, // The name of the file on disk
+            'user_filename' => $parts['basename'], // The name of the file that was uploaded
             'created_datetime' => date('Y-m-d h:i:s'),
             'status' => Batch::STATUS_WAIT
         ]);

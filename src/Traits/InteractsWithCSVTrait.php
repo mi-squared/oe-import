@@ -52,7 +52,7 @@ trait InteractsWithCSVTrait
         return false;
     }
 
-    public function setup(Batch $batch)
+    public function setup(Batch $batch):bool
     {
         $success= true;
         $this->batch_id = $batch->getId();

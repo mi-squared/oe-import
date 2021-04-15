@@ -11,15 +11,19 @@ $sanitize_all_escapes = true;
 require_once __DIR__.'/../../../globals.php';
 
 // read the file or directory from the command line
+// Create a batch from the file (or dir of files) and execute
+// immediately because we don't want to have to wait for the BG process
 $file_or_dir = $argv[1];
 $importManager = $GLOBALS["kernel"]->getContainer()->get('import-manager');
 if (is_dir($file_or_dir)) {
     // Create a new batch for each file in the dir
     foreach (glob($file_or_dir . '/*.*') as $file) {
         $importManager->createBatchFromFile($file);
+        $importManager->execute();
     }
 } else {
     $importManager->createBatchFromFile($file_or_dir);
+    $importManager->execute();
 }
 
 // Execute processing of the file(s)

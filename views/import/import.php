@@ -82,7 +82,7 @@ use OpenEMR\Common\Csrf\CsrfUtils;
         // next 2 lines invoke server side processing
         "ajax": {
             "type" : "GET",
-            "url" : '<?php echo $this->ajax_source_url; ?>&csrf_token_form=' + $('#csrf_token_form').val(),
+            "url" : '<?php echo $this->ajax_source_url; ?>&skip_timeout_reset=1&csrf_token_form=' + $('#csrf_token_form').val(),
             "dataSrc": function (json) {
                 if (typeof json.data === 'undefined') {
                     window.location = '<?php $GLOBALS['webroot']; ?>';
@@ -152,6 +152,7 @@ use OpenEMR\Common\Csrf\CsrfUtils;
     });
 
     setInterval(function() {
+        top.restoreSession();
         batch_table.ajax.reload( null, false );
     }, 3000);
 

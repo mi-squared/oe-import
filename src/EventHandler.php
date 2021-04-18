@@ -30,7 +30,7 @@ class EventHandler
         $container->set('import-manager', $importManager);
 
         // Listen for the menu update event so we can dynamically add our "Import"" menu item
-        $this->eventDispatcher->addListener(MenuEvent::MENU_UPDATE, [$this, 'mainMenuUpdate']);
+        $this->eventDispatcher->addListener(MenuEvent::MENU_UPDATE, [$this, 'mainMenuUpdate'], 10);
 
         $this->eventDispatcher->addListener(ImportBootEvent::IMPORT_BOOTED, [$this, 'importBooted']);
     }

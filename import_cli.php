@@ -19,11 +19,9 @@ if (is_dir($file_or_dir)) {
     // Create a new batch for each file in the dir
     foreach (glob($file_or_dir . '/*.*') as $file) {
         $importManager->createBatchFromFile($file);
-        $importManager->execute();
     }
 } else {
     $importManager->createBatchFromFile($file_or_dir);
-    $importManager->execute();
 }
 
 // Execute processing of the file(s)

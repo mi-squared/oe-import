@@ -218,9 +218,10 @@ class ImportManager
         }
 
         // Create the file with the current date timestamp
-        $parts = pathinfo($file);
-        $filepath = $directory . DIRECTORY_SEPARATOR . date("Ymdhi") . "." . $parts['extension'];
-        if (false === rename($file, $filepath)) {
+        $parts = pathinfo($this->file['name']);
+        $date = \DateTime::createFromFormat('U.u', microtime(TRUE));
+        $filepath = $directory . DIRECTORY_SEPARATOR . $date->format("Ymdhisu") . "." . $parts['extension'];
+        if (false === copy($file, $filepath)) {
             $this->logger->addMessage(xl('Unable to move (rename) file'));
             return false;
         }

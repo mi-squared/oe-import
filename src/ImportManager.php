@@ -218,7 +218,7 @@ class ImportManager
         }
 
         // Create the file with the current date timestamp
-        $parts = pathinfo($this->file['name']);
+        $parts = pathinfo($file);
         $date = \DateTime::createFromFormat('U.u', microtime(TRUE));
         $filepath = $directory . DIRECTORY_SEPARATOR . $date->format("Ymdhisu") . "." . $parts['extension'];
         if (false === copy($file, $filepath)) {

@@ -5,6 +5,7 @@ namespace Mi2\Import\Traits;
 use Mi2\Import\Interfaces\ColumnMapperInterface;
 use Mi2\Import\Models\Batch;
 use Mi2\Import\Models\Response;
+use OpenEMR\Validators\ProcessingResult;
 
 trait InteractsWithCSVTrait
 {
@@ -142,6 +143,16 @@ trait InteractsWithCSVTrait
             } catch (\Exception $e) {
                 $errors++;
                 $this->getLogger()->addMessage($e->getMessage());
+            }
+
+            if ($response instanceof ProcessingResult) {
+                if (is_array($response->getValidationMessages())) {
+                    foreach ($response->getValidationMessages() as $validationMessage) {
+                        foreach ($validationMessage as $key => $value) {
+                            $this->getLogger()->addMessage($value);
+                        }
+                    }
+                }
             }
 
             $record_count++;

@@ -4,6 +4,7 @@ namespace Mi2\Import;
 
 use Mi2\Import\Events\ImportBootEvent;
 use Mi2\Import\Events\RegisterServices;
+use Mi2\Import\Interfaces\ImporterServiceInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 abstract class AbstractImportProvider
@@ -35,8 +36,18 @@ abstract class AbstractImportProvider
     {
         if ($registerServicesEvent->getKey() == $this->getKey()) {
             // error_log($this->getKey() . " registered");
+            // Allow makeImporter() to return multiple importerServices
             $importerService = $this->makeImporter();
-            $registerServicesEvent->getManager()->register($importerService);
+            if ($importerService instanceof ImporterServiceInterface) {
+                $registerServicesEvent->getManager()->register($importerService);
+            } else if (is_array($importerService)) {
+                foreach ($importerService as $service) {
+                    if ($service instanceof ImporterServiceInterface) {
+                        $registerServicesEvent->getManager()->register($service);
+                    }
+                }
+            }
+
         }
         return $registerServicesEvent;
     }

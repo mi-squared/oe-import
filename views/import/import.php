@@ -151,10 +151,10 @@ use OpenEMR\Common\Csrf\CsrfUtils;
         "order": [[1, 'desc']]
     });
 
-    setInterval(function() {
-        top.restoreSession();
-        batch_table.ajax.reload( null, false );
-    }, 3000);
+    // setInterval(function() {
+    //     top.restoreSession();
+    //     batch_table.ajax.reload( null, false );
+    // }, 3000);
 
     $("#import-table tbody").on('click', 'a.batch-delete', function(e) {
         e.preventDefault();

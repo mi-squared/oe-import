@@ -6,5 +6,8 @@ For example:
 https://github.com/mi-squared/oe-crisisprep/tree/main/src/Importer
 
 And in your module's bootstrap:
+
 // Initialize the CPR import provider (plugin for the Import module)
 $importProvider = new \Mi2\CrisisPrep\Importer\ImportProvider($eventDispatcher);
+
+The module adds a menu item and UI to the Administration menu called "Import"

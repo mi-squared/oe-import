@@ -1,3 +1,10 @@
 
-1. Fork or copy this repo's code
-2. Make sure to change package name in composer.json so it can be found by composer
+This is an OpenEMR module that contains "generic" tools for importing data into OpenEMR.
+This is a framework only, and you will need to create another module that implements "ImportProvider" and one or more "Importers"
+
+For example:
+https://github.com/mi-squared/oe-crisisprep/tree/main/src/Importer
+
+And in your module's bootstrap:
+// Initialize the CPR import provider (plugin for the Import module)
+$importProvider = new \Mi2\CrisisPrep\Importer\ImportProvider($eventDispatcher);

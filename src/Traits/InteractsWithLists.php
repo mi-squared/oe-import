@@ -22,8 +22,8 @@ trait InteractsWithLists
                 // Insert our new list in between the two adjacent list options by alpha
                 $now = date('Y-m-d H:i:s');
                 $inserts[]= $listId;
-                $inserts[]= $optionId;
-                $inserts[]= $title;
+                $inserts[]= trim($optionId);
+                $inserts[]= trim($title);
                 $inserts[]= $seq;
                 $inserts[]= $now;
 
@@ -70,7 +70,7 @@ trait InteractsWithLists
         $result = true;
         $messages = [];
         $row = sqlQuery("SELECT option_id FROM list_options WHERE " .
-            "list_id = ? AND title = ? AND activity = 1", array($list, $title));
+            "list_id = ? AND title = ? AND activity = 1", array($list, trim($title)));
         if (
             $row == false ||
             empty($row['option_id'])
@@ -78,10 +78,10 @@ trait InteractsWithLists
             if ($insertWhenNotFound) {
                 $messages[] = "There was a value `$title` in the list `$list` for `$patient_name`. Option was not found, so we created it.";
                 // Insert the new list item
-                $success = $this->insertListOption($list, $title, $title);
+                $success = $this->insertListOption($list, trim($title), trim($title));
                 // Try the fetch again (recursive call one time)
                 $row = sqlQuery("SELECT option_id FROM list_options WHERE " .
-                    "list_id = ? AND title = ? AND activity = 1", array($list, $title));
+                    "list_id = ? AND title = ? AND activity = 1", array($list, trim($title)));
                 if (
                     $row == false ||
                     empty($row['option_id'])

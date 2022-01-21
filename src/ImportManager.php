@@ -3,6 +3,7 @@
 namespace Mi2\Import;
 
 use Mi2\Import\Interfaces\ImporterServiceInterface;
+use Mi2\Import\Interfaces\NamingConventionRequiredInterface;
 use Mi2\Import\Models\Batch;
 use Mi2\Import\Models\Logger;
 use Mi2\Import\Models\Response;
@@ -49,10 +50,19 @@ class ImportManager
         $extension = strtolower($path_parts['extension']);
 
         // Search for the appropriate importer for this file
-        foreach($this->services as $service) {
+        foreach ($this->services as $service) {
             if ($service->supports($extension)) {
-                $importer = $service;
-                break;
+                // Check to see if the importer has a file-naming convention requirement
+                if ($service instanceof NamingConventionRequiredInterface) {
+                    if ($service->matchesConvention($filename)) {
+                        $importer = $service;
+                        break;
+                    }
+                } else {
+                    // the importer doesn't require nameing convention, supports file ext is good enough
+                    $importer = $service;
+                    break;
+                }
             }
         }
 
@@ -78,7 +88,7 @@ class ImportManager
             ]);
 
             // if the file is an image, run the image importer, if it's a csv run patient importer
-            $importer = $this->makeImporter($batch->getFilename());
+            $importer = $this->makeImporter($batch->getUserFilename());
 
             $setup_success = $importer->setup($batch);
 

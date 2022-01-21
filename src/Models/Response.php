@@ -14,6 +14,11 @@ class Response extends AbstractModel
     protected $messages = [];
     protected $result = true;
 
+    public function getData()
+    {
+        return $this->data;
+    }
+
     /**
      * @return mixed
      */

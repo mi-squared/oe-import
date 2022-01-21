@@ -82,7 +82,9 @@ trait InteractsWithCSVTrait
         $this->columns = fgetcsv($this->fh_source, 0 , ',');
         $this->escape_column_data();
 
-        return $this->validate();
+        $valid = $this->validate();
+        fclose($this->fh_source);
+        return $valid;
     }
 
     public function validate()

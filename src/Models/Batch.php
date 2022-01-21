@@ -139,6 +139,21 @@ class Batch extends AbstractEntity
         return sqlStatement($sql, [$status]);
     }
 
+    public static function paginate($start, $length, $sort = '', BoundFilter $filter = null)
+    {
+        $batch_table = self::$table;
+
+        // Build a query that selects all the batches, along with the record counts for total processed,
+        // number of inserts and number of modifications
+        // These field names are used in the report (see getColumns())
+        $sql = "
+            SELECT B.id, B.status, B.start_datetime, B.end_datetime, B.created_datetime, B.filename, B.user_filename, B.record_count,
+                   (B.num_modified + B.num_inserted) AS num_total, B.num_modified, B.num_inserted, B.messages
+            FROM $batch_table B ORDER BY B.id DESC LIMIT {$start}, {$length}";
+
+        return sqlStatement($sql);
+    }
+
     public static function all(BoundFilter $filter = null)
     {
         $batch_table = self::$table;

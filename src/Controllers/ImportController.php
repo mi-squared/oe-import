@@ -51,7 +51,7 @@ class ImportController extends AbstractController
             CsrfUtils::csrfNotVerified();
         }
 
-        $batches_result = Batch::all();
+        $batches_result = Batch::paginate($this->request->getParam('start'), $this->request->getParam('length'));
         $response = new \stdClass();
         $response->data = [];
         while ($batch = sqlFetchArray($batches_result)) {

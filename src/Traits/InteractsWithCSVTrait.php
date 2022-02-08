@@ -55,13 +55,17 @@ trait InteractsWithCSVTrait
 
     public function setup(Batch $batch):bool
     {
-        $success= true;
         $this->batch_id = $batch->getId();
         $this->filename = $batch->getFilename();
+        return $this->openFileAndExtractColumns($this->filename);;
+    }
 
-        $this->fh_source = fopen($this->filename, 'r');
+    public function openFileAndExtractColumns($filename)
+    {
+        $success= true;
+        $this->fh_source = fopen($filename, 'r');
         if ($this->fh_source === false) {
-            $this->getLogger()->addMessage("Failed to open " . $this->filename . " for processing.");
+            $this->getLogger()->addMessage("Failed to open " . $this->$filename . " for processing.");
             $success = false;
         }
 
@@ -76,14 +80,13 @@ trait InteractsWithCSVTrait
 
     public function validateUploadFile($file)
     {
-        $this->fh_source = fopen($file['tmp_name'], 'r') or die("Failed to open file");
+        $valid = false;
+        $success = $this->openFileAndExtractColumns($file['tmp_name']);
+        if ($success) {
+            $valid = $this->validate();
+            fclose($this->fh_source);
+        }
 
-        //read a line
-        $this->columns = fgetcsv($this->fh_source, 0 , ',');
-        $this->escape_column_data();
-
-        $valid = $this->validate();
-        fclose($this->fh_source);
         return $valid;
     }
 

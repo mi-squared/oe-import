@@ -49,6 +49,10 @@ class ImportManager
         $path_parts = pathinfo($filename);
         $extension = strtolower($path_parts['extension']);
 
+        // Reset messages, create a new logger for each batch
+        $this->logger = new Logger();
+        $importer->setLogger($this->logger);
+        $importerFound = false;
         // Search for the appropriate importer for this file
         foreach ($this->services as $service) {
             if ($service->supports($extension)) {
@@ -56,19 +60,27 @@ class ImportManager
                 if ($service instanceof NamingConventionRequiredInterface) {
                     if ($service->matchesConvention($filename)) {
                         $importer = $service;
+                        $importerFound = true;
                         break;
+                    } else {
+                        // This message will be displayed if no matching importer is found
+                        $importerClass = get_class($service);
+                        $importer->getLogger()->addMessage("Importer: `{$importerClass}` supports the `{$extension}` but does not support the required file-naming convention.");
                     }
                 } else {
-                    // the importer doesn't require nameing convention, supports file ext is good enough
+                    // the importer doesn't require naming convention, supports file ext is good enough
                     $importer = $service;
+                    $importerFound = true;
                     break;
                 }
             }
         }
 
-        // Reset messages, create a new logger for each batch
-        $this->logger = new Logger();
-        $importer->setLogger($this->logger);
+        if ($importerFound === true) {
+            // Reset messages, create a new logger for each batch
+            $this->logger = new Logger();
+            $importer->setLogger($this->logger);
+        }
 
         return $importer;
     }

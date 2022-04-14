@@ -2,8 +2,9 @@
 
 namespace Mi2\Import;
 
+use Mi2\Import\Interfaces\ConventionRequiredInterface;
 use Mi2\Import\Interfaces\ImporterServiceInterface;
-use Mi2\Import\Interfaces\NamingConventionRequiredInterface;
+use Mi2\Import\Interfaces\FileConventionRequiredInterface;
 use Mi2\Import\Models\Batch;
 use Mi2\Import\Models\Logger;
 use Mi2\Import\Models\Response;
@@ -43,10 +44,10 @@ class ImportManager
      *
      * @param $file
      */
-    public function makeImporter($filename)
+    public function makeImporter(Batch $batch)
     {
         $importer = new NullImporter();
-        $path_parts = pathinfo($filename);
+        $path_parts = pathinfo($batch->getUserFilename());
         $extension = strtolower($path_parts['extension']);
 
         // Reset messages, create a new logger for each batch
@@ -57,8 +58,8 @@ class ImportManager
         foreach ($this->services as $service) {
             if ($service->supports($extension)) {
                 // Check to see if the importer has a file-naming convention requirement
-                if ($service instanceof NamingConventionRequiredInterface) {
-                    if ($service->matchesConvention($filename)) {
+                if ($service instanceof ConventionRequiredInterface) {
+                    if ($service->matchesConvention($batch)) {
                         $importer = $service;
                         $importerFound = true;
                         break;
@@ -100,7 +101,7 @@ class ImportManager
             ]);
 
             // if the file is an image, run the image importer, if it's a csv run patient importer
-            $importer = $this->makeImporter($batch->getUserFilename());
+            $importer = $this->makeImporter($batch);
 
             $setup_success = $importer->setup($batch);
 
@@ -157,7 +158,15 @@ class ImportManager
     public function validateFile()
     {
         if (!empty($this->file)) {
-            $importer = $this->makeImporter($this->file['name']);
+            // Make a temporary batch
+            $importer = $this->makeImporter(
+                new Batch([
+                    'filename' => $this->file['name'], // The name of the file on disk
+                    'user_filename' => $this->file['name'], // The name of the file that was uploaded
+                    'created_datetime' => date('Y-m-d h:i:s'),
+                    'status' => Batch::STATUS_WAIT
+                ])
+            );
             if ($importer->validateUploadFile($this->file)) {
                 return true;
             } else {

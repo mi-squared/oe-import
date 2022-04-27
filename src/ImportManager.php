@@ -59,6 +59,7 @@ class ImportManager
             if ($service->supports($extension)) {
                 // Check to see if the importer has a file-naming convention requirement
                 if ($service instanceof ConventionRequiredInterface) {
+                    $service->setLogger($this->logger);
                     if ($service->matchesConvention($batch)) {
                         $importer = $service;
                         $importerFound = true;
@@ -161,7 +162,7 @@ class ImportManager
             // Make a temporary batch
             $importer = $this->makeImporter(
                 new Batch([
-                    'filename' => $this->file['name'], // The name of the file on disk
+                    'filename' => $this->file['tmp_name'], // The name of the file on disk
                     'user_filename' => $this->file['name'], // The name of the file that was uploaded
                     'created_datetime' => date('Y-m-d h:i:s'),
                     'status' => Batch::STATUS_WAIT

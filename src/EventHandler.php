@@ -40,7 +40,7 @@ class EventHandler
         // error_log("Import Booted");
         $importManager = $GLOBALS["kernel"]->getContainer()->get('import-manager');
         $registerServicesEvent = new RegisterServices($importBootEvent->getKey(), $importManager);
-        $registerServicesEvent = $this->eventDispatcher->dispatch(RegisterServices::REGISTER, $registerServicesEvent, 10);
+        $registerServicesEvent = $this->eventDispatcher->dispatch( $registerServicesEvent,RegisterServices::REGISTER, 10);
     }
 
     public function mainMenuUpdate(MenuEvent $event)

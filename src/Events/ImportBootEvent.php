@@ -2,7 +2,7 @@
 
 namespace Mi2\Import\Events;
 
-use Symfony\Component\EventDispatcher\Event;
+use Symfony\Contracts\EventDispatcher\Event;
 
 class ImportBootEvent extends Event
 {

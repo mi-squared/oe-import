@@ -28,7 +28,7 @@ abstract class AbstractImportProvider
 
         // Tell the system the importer is done registering
         $importBootEvent = new ImportBootEvent($this->getKey());
-        $importBootEvent = $this->eventDispatcher->dispatch(ImportBootEvent::IMPORT_BOOTED, $importBootEvent, 10);
+        $importBootEvent = $this->eventDispatcher->dispatch($importBootEvent, ImportBootEvent::IMPORT_BOOTED,  10);
         return $importBootEvent;
     }
 

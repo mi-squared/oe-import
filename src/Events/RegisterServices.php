@@ -3,7 +3,7 @@ namespace Mi2\Import\Events;
 
 use Mi2\Import\ImporterServiceInterface;
 use Mi2\Import\ImportManager;
-use Symfony\Component\EventDispatcher\Event;
+use Symfony\Contracts\EventDispatcher\Event;
 
 class RegisterServices extends Event
 {
